@@ -26,6 +26,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/cloudnative-pg/cloudnative-pg/internal/cmd/manager/instance/downgrade"
 	"github.com/cloudnative-pg/cloudnative-pg/internal/cmd/manager/instance/initdb"
 	"github.com/cloudnative-pg/cloudnative-pg/internal/cmd/manager/instance/join"
 	"github.com/cloudnative-pg/cloudnative-pg/internal/cmd/manager/instance/pgbasebackup"
@@ -50,6 +51,7 @@ func NewCmd() *cobra.Command {
 		},
 	}
 
+	cmd.AddCommand(downgrade.NewCmd())
 	cmd.AddCommand(initdb.NewCmd())
 	cmd.AddCommand(join.NewCmd())
 	cmd.AddCommand(run.NewCmd())

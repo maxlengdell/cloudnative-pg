@@ -1395,14 +1395,15 @@ func (v *ClusterCustomValidator) validateImageChange(r, old *apiv1.Cluster) fiel
 	}
 	oldVersion := old.Status.PGDataImageInfo.MajorVersion
 
-	if oldVersion > newVersion {
-		result = append(
-			result,
-			field.Invalid(
-				fieldPath,
-				strconv.Itoa(newVersion),
-				fmt.Sprintf("can't downgrade from major %v to %v", oldVersion, newVersion)))
-	}
+	// Downgrades are now allowed
+	// if oldVersion > newVersion {
+	// 	result = append(
+	// 		result,
+	// 		field.Invalid(
+	// 			fieldPath,
+	// 			strconv.Itoa(newVersion),
+	// 			fmt.Sprintf("can't downgrade from major %v to %v", oldVersion, newVersion)))
+	// }
 
 	// TODO: Upgrading to versions 14 and 15 would require carrying information around about the collation used.
 	//   See https://git.postgresql.org/gitweb/?p=postgresql.git;a=commitdiff;h=9637badd9.
