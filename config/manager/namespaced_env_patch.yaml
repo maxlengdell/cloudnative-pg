@@ -6,3 +6,4 @@ data:
   NAMESPACED: "true"
   OPERATOR_NAMESPACE: system
   WATCH_NAMESPACE: system
+  ENABLE_WEBHOOKS: "false"
