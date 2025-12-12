@@ -1,0 +1,49 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: freddie
+  annotations:
+    cnpg.io/validation: "disabled"
+
+spec:
+  instances: 1
+  enableSuperuserAccess: true
+  env:
+    - name: POD_NAME
+      value: "this-is-not-allowed"
+  # Instead of imageName, use imageCatalogRef to specify major and minor version
+  imageCatalogRef:
+    apiGroup: postgresql.cnpg.io
+    kind: ImageCatalog
+    name: postgresql-catalog
+    major: 17
+
+  storage:
+    size: 1Gi
+
+  bootstrap:
+    initdb:
+      postInitApplicationSQL:
+        - CREATE TABLE n (i SERIAL PRIMARY KEY, m INTEGER)
+        - INSERT INTO n (m) (SELECT generate_series(1, 10000))
+        - ALTER TABLE n OWNER TO app
+        - CREATE TABLE maxTest (id SERIAL PRIMARY KEY, data TEXT, value INTEGER)
+        - INSERT INTO maxTest (data, value) VALUES ('test1', 100), ('test2', 200), ('test3', 300)
+        - ALTER TABLE maxTest OWNER TO app
+
+  managed:
+    roles:
+      - name: app
+        login: true
+        replication: true
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ImageCatalog
+metadata:
+  name: postgresql-catalog
+spec:
+  images:
+    - major: 17
+      image: ghcr.io/cloudnative-pg/postgresql:17
+    - major: 16
+      image: ghcr.io/cloudnative-pg/postgresql:16

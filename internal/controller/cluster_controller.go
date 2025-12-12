@@ -53,6 +53,7 @@ import (
 	"github.com/cloudnative-pg/cloudnative-pg/internal/cnpi/plugin/repository"
 	"github.com/cloudnative-pg/cloudnative-pg/internal/configuration"
 	rolloutManager "github.com/cloudnative-pg/cloudnative-pg/internal/controller/rollout"
+	webhookv1 "github.com/cloudnative-pg/cloudnative-pg/internal/webhook/v1"
 	"github.com/cloudnative-pg/cloudnative-pg/pkg/certs"
 	"github.com/cloudnative-pg/cloudnative-pg/pkg/management/postgres/webserver/client/remote"
 	"github.com/cloudnative-pg/cloudnative-pg/pkg/postgres"
@@ -284,6 +285,11 @@ func (r *ClusterReconciler) reconcile(ctx context.Context, cluster *apiv1.Cluste
 	// Make sure default values are populated.
 	err = r.setDefaults(ctx, cluster)
 	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	// Validate cluster configuration when webhooks are disabled
+	if err = r.validateCluster(ctx, cluster); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -715,15 +721,47 @@ func (r *ClusterReconciler) getCluster(
 func (r *ClusterReconciler) setDefaults(ctx context.Context, cluster *apiv1.Cluster) error {
 	contextLogger := log.FromContext(ctx)
 	originCluster := cluster.DeepCopy()
-	cluster.SetDefaults()
-	if !reflect.DeepEqual(originCluster.Spec, cluster.Spec) {
-		contextLogger.Info("Admission controllers (webhooks) appear to have been disabled. " +
-			"Please enable them for this object/namespace")
-		err := r.Patch(ctx, cluster, client.MergeFrom(originCluster))
-		if err != nil {
-			return err
+	if !configuration.Current.EnableWebhooks {
+		// Apply defaults if not already set
+		if reflect.DeepEqual(originCluster.Spec, cluster.Spec) {
+			// Set the cluster default values while preserving the user input
+			cluster.Default()
+			contextLogger.Info("Configuring cluster defaults", "cluster", cluster.Name)
+		}
+	} else {
+		cluster.SetDefaults()
+		if !reflect.DeepEqual(originCluster.Spec, cluster.Spec) {
+			contextLogger.Info("Admission controllers (webhooks) appear to have been disabled. " +
+				"Please enable them for this object/namespace")
+			err := r.Patch(ctx, cluster, client.MergeFrom(originCluster))
+			if err != nil {
+				return err
+			}
 		}
 	}
+	return nil
+}
+
+// validateCluster performs validation when webhooks are disabled.
+func (r *ClusterReconciler) validateCluster(ctx context.Context, cluster *apiv1.Cluster) error {
+	contextLogger := log.FromContext(ctx)
+
+	// When webhooks are enabled, validation happens at admission time.
+	// When webhooks are disabled, we validate here and log errors without blocking reconciliation
+	// to avoid breaking existing clusters that may have been created with webhooks enabled.
+	if configuration.Current.EnableWebhooks {
+		return nil
+	}
+
+	validator := &webhookv1.ClusterCustomValidator{}
+	allErrs := validator.ValidateCluster(cluster)
+
+	if len(allErrs) > 0 {
+		contextLogger.Warning("Cluster validation errors detected",
+			"cluster", cluster.Name,
+			"errors", allErrs.ToAggregate().Error())
+	}
+
 	return nil
 }
 

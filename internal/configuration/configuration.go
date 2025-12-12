@@ -100,6 +100,9 @@ type Data struct {
 	// its own namespace. Default false
 	Namespaced bool `json:"namespaced" env:"NAMESPACED"`
 
+	// EnableWebhooks checks if webhooks should be enabled.
+	// Webhooks are enabled by default unless explicitly set to "false".
+	EnableWebhooks bool `json:"enableWebhooks" env:"ENABLE_WEBHOOKS"`
 	// OperatorPullSecretName is the pull secret used to download the
 	// pull secret name
 	OperatorPullSecretName string `json:"operatorPullSecretName" env:"PULL_SECRET_NAME"`
@@ -199,6 +202,7 @@ func newDefaultConfig() *Data {
 		KubernetesClusterDomain: DefaultKubernetesClusterDomain,
 		DrainTaints:             DefaultDrainTaints,
 		Namespaced:              false,
+		EnableWebhooks:          true,
 	}
 }
 

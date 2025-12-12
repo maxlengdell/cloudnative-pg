@@ -4,6 +4,5 @@ metadata:
   name: controller-manager-env
 data:
   NAMESPACED: "true"
-  OPERATOR_NAMESPACE: system
-  WATCH_NAMESPACE: system
+  WATCH_NAMESPACE: cnpg-system
   ENABLE_WEBHOOKS: "false"

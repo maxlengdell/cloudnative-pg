@@ -172,6 +172,11 @@ func (v *ClusterCustomValidator) ValidateDelete(_ context.Context, obj runtime.O
 	return nil, nil
 }
 
+// ValidateCluster is a public method that validates a cluster and returns validation errors
+func (v *ClusterCustomValidator) ValidateCluster(r *apiv1.Cluster) field.ErrorList {
+	return v.validate(r)
+}
+
 // validateCluster groups the validation logic for clusters returning a list of all encountered errors
 func (v *ClusterCustomValidator) validate(r *apiv1.Cluster) (allErrs field.ErrorList) {
 	type validationFunc func(*apiv1.Cluster) field.ErrorList
