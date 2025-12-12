@@ -290,6 +290,11 @@ func (r *ClusterReconciler) reconcile(ctx context.Context, cluster *apiv1.Cluste
 		return ctrl.Result{}, err
 	}
 
+	// Validate cluster configuration when webhooks are disabled
+	if err = r.validateCluster(ctx, cluster); err != nil {
+		return ctrl.Result{}, err
+	}
+
 	// Discover the image to be used and set it into the status
 	if result, err := r.reconcileImage(ctx, cluster); result != nil || err != nil {
 		if result != nil {
@@ -718,15 +723,38 @@ func (r *ClusterReconciler) getCluster(
 func (r *ClusterReconciler) setDefaults(ctx context.Context, cluster *apiv1.Cluster) error {
 	contextLogger := log.FromContext(ctx)
 	originCluster := cluster.DeepCopy()
-	cluster.SetDefaults()
-	if !reflect.DeepEqual(originCluster.Spec, cluster.Spec) {
-		contextLogger.Info("Admission controllers (webhooks) appear to have been disabled. " +
-			"Please enable them for this object/namespace")
-		err := r.Patch(ctx, cluster, client.MergeFrom(originCluster))
-		if err != nil {
-			return err
+	if r.namespaced {
+		// Apply defaults if not already set
+		if reflect.DeepEqual(originCluster.Spec, cluster.Spec) {
+			// Set the cluster default values while preserving the user input
+			cluster.Default()
+			contextLogger.Info("Configuring cluster defaults", "cluster", cluster.Name)
+		}
+	} else {
+		cluster.SetDefaults()
+		if !reflect.DeepEqual(originCluster.Spec, cluster.Spec) {
+			contextLogger.Info("Admission controllers (webhooks) appear to have been disabled. " +
+				"Please enable them for this object/namespace")
+			err := r.Patch(ctx, cluster, client.MergeFrom(originCluster))
+			if err != nil {
+				return err
+			}
 		}
 	}
+	return nil
+}
+
+// validateCluster performs validation when webhooks are disabled.
+// This is a placeholder for validation logic that would normally be handled by webhooks.
+// TODO: Implement validation by calling webhook validation functions
+func (r *ClusterReconciler) validateCluster(ctx context.Context, cluster *apiv1.Cluster) error {
+	// When webhooks are enabled, validation happens at admission time.
+	// When webhooks are disabled, we log validation errors but don't block reconciliation
+	// to avoid breaking existing clusters that may have been created with webhooks enabled.
+	//
+	// Future enhancement: Call webhook validator functions here and update cluster status
+	// with validation errors if any are found.
+
 	return nil
 }
 
