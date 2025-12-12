@@ -6,3 +6,4 @@ data:
   NAMESPACED: "true"
   OPERATOR_NAMESPACE: "cnpg-system"
   WATCH_NAMESPACE: "cnpg-system"
+  ENABLE_WEBHOOKS: "false"
