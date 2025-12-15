@@ -38,6 +38,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	apiv1 "github.com/cloudnative-pg/cloudnative-pg/api/v1"
+	"github.com/cloudnative-pg/cloudnative-pg/internal/configuration"
 	"github.com/cloudnative-pg/cloudnative-pg/pkg/certs"
 	"github.com/cloudnative-pg/cloudnative-pg/pkg/postgres"
 	"github.com/cloudnative-pg/cloudnative-pg/pkg/reconciler/hibernation"
@@ -116,9 +117,13 @@ func (r *ClusterReconciler) getManagedResources(
 		return nil, err
 	}
 
-	nodes, err := r.getNodes(ctx)
-	if err != nil {
-		return nil, err
+	// If operator is configured in namespaced mode, set as empty list.
+	var nodes map[string]corev1.Node
+	if !configuration.Current.Namespaced {
+		nodes, err = r.getNodes(ctx)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &managedResources{
@@ -129,12 +134,7 @@ func (r *ClusterReconciler) getManagedResources(
 	}, nil
 }
 
-// If operator is configured in namespaced mode, return empty list and nil.
 func (r *ClusterReconciler) getNodes(ctx context.Context) (map[string]corev1.Node, error) {
-	if r.namespaced {
-		return map[string]corev1.Node{}, nil
-	}
-
 	var nodes corev1.NodeList
 	if err := r.List(ctx, &nodes); err != nil {
 		return nil, err
@@ -241,12 +241,14 @@ func (r *ClusterReconciler) updateResourceStatus(
 	newJobs := int32(len(resources.jobs.Items)) //nolint:gosec
 	cluster.Status.JobCount = newJobs
 
-	cluster.Status.Topology = getPodsTopology(
-		ctx,
-		resources.instances.Items,
-		resources.nodes,
-		cluster.Spec.PostgresConfiguration.SyncReplicaElectionConstraint,
-	)
+	if !configuration.Current.Namespaced {
+		cluster.Status.Topology = getPodsTopology(
+			ctx,
+			resources.instances.Items,
+			resources.nodes,
+			cluster.Spec.PostgresConfiguration.SyncReplicaElectionConstraint,
+		)
+	}
 
 	// Services
 	cluster.Status.WriteService = cluster.GetServiceReadWriteName()

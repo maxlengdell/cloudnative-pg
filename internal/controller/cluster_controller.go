@@ -93,7 +93,6 @@ type ClusterReconciler struct {
 
 	drainTaints    []string
 	rolloutManager *rolloutManager.Manager
-	namespaced     bool
 }
 
 // NewClusterReconciler creates a new ClusterReconciler initializing it
@@ -102,7 +101,6 @@ func NewClusterReconciler(
 	discoveryClient *discovery.DiscoveryClient,
 	plugins repository.Interface,
 	drainTaints []string,
-	namespaced bool,
 ) *ClusterReconciler {
 	return &ClusterReconciler{
 		InstanceClient:  remote.NewClient().Instance(),
@@ -116,7 +114,6 @@ func NewClusterReconciler(
 			configuration.Current.GetInstancesRolloutDelay(),
 		),
 		drainTaints: drainTaints,
-		namespaced:  namespaced,
 	}
 }
 
@@ -1181,7 +1178,7 @@ func (r *ClusterReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manag
 		)
 
 	// Only monitor cluster wide resources if not namespaced
-	if !r.namespaced {
+	if !configuration.Current.Namespaced {
 		b = b.Watches(
 			&corev1.Node{},
 			handler.EnqueueRequestsFromMapFunc(r.mapNodeToClusters()),

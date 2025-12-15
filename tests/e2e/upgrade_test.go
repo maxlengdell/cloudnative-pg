@@ -876,46 +876,7 @@ var _ = Describe("Upgrade", Label(tests.LabelUpgrade, tests.LabelNoOpenshift), O
 			})
 
 			By("verifying cluster can be reconciled", func() {
-				cluster, err := clusterutils.Get(env.Ctx, env.Client, operatorNamespace, testClusterName)
-				Expect(err).ToNot(HaveOccurred())
-
-				oldCluster := cluster.DeepCopy()
-				cluster.Spec.PostgresConfiguration.Parameters["max_connections"] = "150"
-				err = env.Client.Patch(env.Ctx, cluster, ctrlclient.MergeFrom(oldCluster))
-				Expect(err).ToNot(HaveOccurred())
-
-				primary, err := clusterutils.GetPrimary(env.Ctx, env.Client, operatorNamespace, testClusterName)
-				Expect(err).ToNot(HaveOccurred())
-
-				Eventually(func() (string, error) {
-					stdout, _, err := exec.QueryInInstancePod(
-						env.Ctx, env.Client, env.Interface, env.RestClientConfig,
-						exec.PodLocator{
-							Namespace: primary.Namespace,
-							PodName:   primary.Name,
-						},
-						postgres.PostgresDBName,
-						"show max_connections")
-					return strings.Trim(stdout, "\n"), err
-				}, 300).Should(BeEquivalentTo("150"))
-			})
-
-			By("deleting the cluster", func() {
-				cluster := &apiv1.Cluster{}
-				err := env.Client.Get(env.Ctx,
-					types.NamespacedName{Namespace: operatorNamespace, Name: testClusterName},
-					cluster)
-				Expect(err).ToNot(HaveOccurred())
-
-				err = env.Client.Delete(env.Ctx, cluster)
-				Expect(err).ToNot(HaveOccurred())
-
-				Eventually(func() bool {
-					err := env.Client.Get(env.Ctx,
-						types.NamespacedName{Namespace: operatorNamespace, Name: testClusterName},
-						cluster)
-					return err != nil
-				}, 120).Should(BeTrue())
+				AssertConfUpgrade(operatorNamespace, testClusterName)
 			})
 		})
 	})

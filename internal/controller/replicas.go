@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	apiv1 "github.com/cloudnative-pg/cloudnative-pg/api/v1"
+	"github.com/cloudnative-pg/cloudnative-pg/internal/configuration"
 	"github.com/cloudnative-pg/cloudnative-pg/pkg/postgres"
 	"github.com/cloudnative-pg/cloudnative-pg/pkg/specs"
 	"github.com/cloudnative-pg/cloudnative-pg/pkg/utils"
@@ -65,7 +66,7 @@ func (r *ClusterReconciler) reconcileTargetPrimaryFromPods(
 	// First step: check if the current primary is running in an unschedulable node
 	// and issue a switchover if that's the case
 	// Can not check node settings in namespaced deployment
-	if !r.namespaced {
+	if !configuration.Current.Namespaced {
 		if primary := status.Items[0]; (primary.IsPrimary || (cluster.IsReplica() && primary.IsPodReady)) &&
 			primary.Pod.Name == cluster.Status.CurrentPrimary &&
 			cluster.Status.TargetPrimary == cluster.Status.CurrentPrimary {

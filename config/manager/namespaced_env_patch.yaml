@@ -4,5 +4,5 @@ metadata:
   name: controller-manager-env
 data:
   NAMESPACED: "true"
-  OPERATOR_NAMESPACE: "cnpg-system"
-  WATCH_NAMESPACE: "cnpg-system"
+  OPERATOR_NAMESPACE: system
+  WATCH_NAMESPACE: system

@@ -40,7 +40,8 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Namespaced Deployment", Label(tests.LabelNoOpenshift, tests.LabelDisruptive, tests.LabelNamespacedOperator), Ordered, Serial, func() {
+var _ = Describe("Namespaced Deployment", Label(tests.LabelNoOpenshift, tests.LabelDisruptive,
+	tests.LabelNamespacedOperator), Ordered, Serial, func() {
 	const (
 		operatorNamespace          = "cnpg-system"
 		namespacedOperatorManifest = fixturesDir + "/upgrade/current-namespaced-manifest.yaml"
@@ -56,7 +57,6 @@ var _ = Describe("Namespaced Deployment", Label(tests.LabelNoOpenshift, tests.La
 		if IsOpenshift() {
 			Skip("This test case is not applicable on OpenShift clusters")
 		}
-
 	})
 
 	BeforeEach(func() {
@@ -84,11 +84,11 @@ var _ = Describe("Namespaced Deployment", Label(tests.LabelNoOpenshift, tests.La
 				env.Ctx, env.Client,
 				operatorNamespace, "out/"+CurrentSpecReport().LeafNodeText+"operator.log")
 		}
-		DeleteResourcesFromFile(operatorNamespace, sampleFile)
+		err := DeleteResourcesFromFile(operatorNamespace, sampleFile)
+		Expect(err).ToNot(HaveOccurred())
 	})
 
 	It("can create and reconcile clusters in namespaced mode", func() {
-
 		By("creating a cluster in the operator namespace", func() {
 			CreateResourceFromFile(operatorNamespace, sampleFile)
 		})

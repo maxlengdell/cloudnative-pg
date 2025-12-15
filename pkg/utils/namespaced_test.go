@@ -53,7 +53,8 @@ var _ = Describe("ValidateNamespacedConfiguration", func() {
 		}
 		err := ValidateNamespacedConfiguration(conf)
 		Expect(err).To(HaveOccurred())
-		Expect(err.Error()).To(ContainSubstring("operator namespace (operator-ns) and watch namespace (watch-ns) must be equal"))
+		Expect(err.Error()).To(ContainSubstring(
+			"operator namespace (operator-ns) and watch namespace (watch-ns) must be equal"))
 	})
 
 	It("should fail when namespaced is enabled and operator namespace is empty", func() {
