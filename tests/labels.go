@@ -100,4 +100,7 @@ const (
 
 	// LabelPostgresMajorUpgrade is a label for Cluster major version upgrade tests
 	LabelPostgresMajorUpgrade = "postgres-major-upgrade"
+
+	// LabelNamespacedOperator is a label for namespaced deployment tests with restricted rbac
+	LabelNamespacedOperator = "namespaced-operator"
 )
